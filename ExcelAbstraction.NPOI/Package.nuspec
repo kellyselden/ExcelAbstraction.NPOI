@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+    <metadata>
+        <id>ExcelAbstraction.NPOI</id>
+        <version>0.0.0</version>
+        <authors>Kelly Selden</authors>
+        <projectUrl>https://github.com/kellyselden/ExcelAbstraction.NPOI</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>ExcelAbstraction implementation using NPOI</description>
+        <tags>Excel ExcelAbstraction NPOI</tags>
+        <dependencies>
+            <dependency id="ExcelAbstraction" version="0.0.0" />
+            <dependency id="NPOI" version="2.0.6" />
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="bin\Release\ExcelAbstraction.NPOI.dll" target="lib\ExcelAbstraction.NPOI.dll" />
+    </files>
+</package>
