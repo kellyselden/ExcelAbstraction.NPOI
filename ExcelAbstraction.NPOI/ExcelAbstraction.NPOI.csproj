@@ -31,8 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="ExcelAbstraction">
-      <HintPath>..\packages\ExcelAbstraction.0.0.0\lib\ExcelAbstraction.dll</HintPath>
+    <Reference Include="ExcelAbstraction, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\ExcelAbstraction.0.0.1\lib\ExcelAbstraction.dll</HintPath>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib">
       <HintPath>..\packages\NPOI.2.0.6\lib\net20\ICSharpCode.SharpZipLib.dll</HintPath>
@@ -49,6 +50,7 @@
     <Reference Include="NPOI.OpenXmlFormats">
       <HintPath>..\packages\NPOI.2.0.6\lib\net20\NPOI.OpenXmlFormats.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExcelService.cs" />
