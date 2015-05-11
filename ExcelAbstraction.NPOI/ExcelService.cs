@@ -1,13 +1,23 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using ExcelAbstraction.Entities;
+using ExcelAbstraction.Helpers;
 using ExcelAbstraction.Services;
+using NPOI.HSSF.Model;
+using NPOI.HSSF.Record;
+using NPOI.HSSF.Record.Aggregates;
 using NPOI.HSSF.UserModel;
+using NPOI.OpenXmlFormats.Spreadsheet;
+using NPOI.SS.Formula;
+using NPOI.SS.Formula.PTG;
 using NPOI.SS.UserModel;
+using NPOI.SS.Util;
 using NPOI.XSSF.UserModel;
 
 namespace ExcelAbstraction.NPOI
@@ -53,7 +63,9 @@ namespace ExcelAbstraction.NPOI
 				maxColumns = Math.Max(maxColumns, row.LastCellNum);
 				rows.Add(row);
 			}
-			return new Worksheet(sheet.SheetName, index, maxColumns, rows.Select(row => CreateRow(row, maxColumns)).ToArray());
+			var worksheet = new Worksheet(sheet.SheetName, index, maxColumns, rows.Select(row => CreateRow(row, maxColumns)).ToArray());
+			AddToValidations(worksheet.Validations, sheet);
+			return worksheet;
 		}
 
 		Row CreateRow(IRow row, int columns)
@@ -129,6 +141,7 @@ namespace ExcelAbstraction.NPOI
 			foreach (Worksheet worksheet in workbook.Worksheets)
 			{
 				ISheet sheet = iWorkbook.CreateSheet(worksheet.Name);
+				AddValidations(sheet, version, worksheet.Validations.ToArray());
 				foreach (Row row in worksheet.Rows)
 				{
 					IRow iRow = sheet.CreateRow(row.Index);
@@ -143,6 +156,111 @@ namespace ExcelAbstraction.NPOI
 			}
 
 			return iWorkbook;
+		}
+
+		public object GetWorkbook(string path)
+		{
+			return WorkbookFactory.Create(path);
+		}
+
+		public object GetWorkbook(Stream stream)
+		{
+			return WorkbookFactory.Create(stream);
+		}
+
+		public void SaveWorkbook(object workbook, string path)
+		{
+			using (var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write))
+				SaveWorkbook(workbook, stream);
+		}
+
+		public void SaveWorkbook(object workbook, Stream stream)
+		{
+			((IWorkbook)workbook).Write(stream);
+		}
+
+		static void AddToValidations(ICollection<Validation> validations, ISheet sheet)
+		{
+			var hssfSheet = sheet as HSSFSheet;
+			if (hssfSheet != null)
+			{
+				AddToValidations(validations, hssfSheet);
+			}
+			else
+			{
+				var xssfSheet = sheet as XSSFSheet;
+				if (xssfSheet != null)
+				{
+					AddToValidations(validations, xssfSheet);
+				}
+			}
+		}
+
+		static void AddToValidations(ICollection<Validation> validations, HSSFSheet sheet)
+		{
+			InternalSheet internalSheet = sheet.Sheet;
+			var dataValidityTable = (DataValidityTable)internalSheet.GetType()
+				.GetField("_dataValidityTable", BindingFlags.NonPublic | BindingFlags.Instance)
+				.GetValue(internalSheet);
+			if (dataValidityTable == null) return;
+
+			var validationList = (IList)dataValidityTable.GetType()
+				.GetField("_validationList", BindingFlags.NonPublic | BindingFlags.Instance)
+				.GetValue(dataValidityTable);
+			foreach (DVRecord record in validationList)
+			{
+				var formula = (Formula)record.GetType()
+					.GetField("_formula1", BindingFlags.NonPublic | BindingFlags.Instance)
+					.GetValue(record);
+				validations.Add(new Validation
+				{
+					Range = ExcelHelper.ParseRange(record.CellRangeAddress.CellRangeAddresses[0].FormatAsString(), ExcelVersion.Xls),
+					List = ((StringPtg)formula.Tokens[0]).Value.Split('\0')
+				});
+			}
+		}
+
+		static void AddToValidations(ICollection<Validation> validations, XSSFSheet sheet)
+		{
+			CT_DataValidations dataValidations = ((CT_Worksheet)sheet.GetType()
+				.GetField("worksheet", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+				.GetValue(sheet)).dataValidations;
+			if (dataValidations == null) return;
+
+			foreach (CT_DataValidation dataValidation in dataValidations.dataValidation)
+			{
+				if (dataValidation.formula1 == null) continue;
+
+				var range = ExcelHelper.ParseRange(dataValidation.sqref, ExcelVersion.Xlsx);
+				if (range == null) continue;
+
+				validations.Add(new Validation
+				{
+					Range = range,
+					List = dataValidation.formula1.Trim('\"').Split(',')
+				});
+			}
+		}
+
+		public void AddValidations(object workbook, int sheetIndex, ExcelVersion version, params Validation[] validations)
+		{
+			AddValidations(((IWorkbook)workbook).GetSheetAt(sheetIndex), version, validations);
+		}
+
+		static void AddValidations(ISheet sheet, ExcelVersion version, params Validation[] validations)
+		{
+			IDataValidationHelper helper = sheet.GetDataValidationHelper();
+			foreach (Validation validation in validations)
+			{
+				IDataValidationConstraint constraint = helper.CreateExplicitListConstraint(validation.List.ToArray());
+				var range = new CellRangeAddressList(
+					validation.Range.RowStart,
+					validation.Range.RowEnd ?? ExcelHelper.GetRowMax(version),
+					validation.Range.ColumnStart,
+					validation.Range.ColumnEnd);
+				IDataValidation dataValidation = helper.CreateValidation(constraint, range);
+				sheet.AddValidationData(dataValidation);
+			}
 		}
 	}
 }

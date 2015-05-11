@@ -5,7 +5,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace ExcelAbstraction.NPOI.Tests
 {
 	[TestClass]
-	public class NPOITests : ExcelTests
+	public class NPOITests : ExcelServiceTests
 	{
 		const string WorksheetName = "Data";
 
@@ -34,7 +34,7 @@ namespace ExcelAbstraction.NPOI.Tests
 		[DeploymentItem(Strings.DeploymentItem)]
 		public void Workbook_Worksheets()
 		{
-			var worksheets = Workbook.Worksheets.ToArray();
+			var worksheets = DiskWorkbook.Worksheets.ToArray();
 
 			Assert.AreEqual(3, worksheets.Length);
 			Assert.AreEqual("Index Plot", worksheets[0].Name);
@@ -46,7 +46,7 @@ namespace ExcelAbstraction.NPOI.Tests
 		[DeploymentItem(Strings.DeploymentItem)]
 		public void Worksheet_Rows()
 		{
-			Assert.AreEqual(2423, Workbook.Worksheets.Single(worksheet => worksheet.Name == WorksheetName).Rows.Count());
+			Assert.AreEqual(2423, DiskWorkbook.Worksheets.Single(worksheet => worksheet.Name == WorksheetName).Rows.Count());
 		}
 
 		[TestMethod]
@@ -82,6 +82,20 @@ namespace ExcelAbstraction.NPOI.Tests
 		public override void ExcelService_WriteWorkbook_Xlsx()
 		{
 			base.ExcelService_WriteWorkbook_Xlsx();
+		}
+
+		[TestMethod]
+		[DeploymentItem(Strings.DeploymentItem)]
+		public override void ExcelService_AddValidations()
+		{
+			base.ExcelService_AddValidations();
+		}
+
+		[TestMethod]
+		[DeploymentItem(Strings.DeploymentItem)]
+		public override void ExcelService_AddValidations_Hack()
+		{
+			base.ExcelService_AddValidations_Hack();
 		}
 	}
 }
