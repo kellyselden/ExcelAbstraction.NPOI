@@ -41,7 +41,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="ExcelAbstraction, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\ExcelAbstraction.0.0.4\lib\ExcelAbstraction.dll</HintPath>
+      <HintPath>..\packages\ExcelAbstraction.0.0.5\lib\ExcelAbstraction.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="ExcelAbstraction.Tests, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
